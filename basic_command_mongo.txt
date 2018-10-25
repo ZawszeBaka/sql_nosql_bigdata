@@ -1,0 +1,12 @@
+
+Ref: https://docs.mongodb.com/manual/reference/mongo-shell/
+
+show dbs  # or show databases
+
+use <db> 
+
+show collections 
+
+db.<collection>.find()
+
+db.<collection>.find(<query>).count()

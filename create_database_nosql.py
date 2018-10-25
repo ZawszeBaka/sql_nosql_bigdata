@@ -1,11 +1,22 @@
 
+import os
+
 import pymongo
 import pandas as pd
 
 PATH = 'dataset/1500000_Sales_Records/'
-PATH_DATA_1 = 'dataset/1500000_Sales_Records/' + '1500000_Sales_Records.csv'
 
 def segment_big_file( PATH_DATA ,NUM_BLOCKS = 250000):
+
+	'''
+		Input:
+			PATH_DATA : path to the big big big file 
+
+		Process:
+			Divide into blocks . Each blocks has NUM_BLOCKS rows
+			Save to separated files 
+
+	'''
 	
 	print(' [INFO] reading '+ PATH_DATA)
 
@@ -29,56 +40,69 @@ def segment_big_file( PATH_DATA ,NUM_BLOCKS = 250000):
 
 		begin += NUM_BLOCKS
 		end += NUM_BLOCKS
-		if end > t.shape[0]:
+		if end > t.shape[0] and begin < t.shape[0]:
+			end = t.shape[0]
+		elif end > t.shape[0]:
 			break
+		else:
+			continue
 
 	log_path = PATH+'segment_paths.csv'
 	print(' [LOGGING] ' , PATH+log_path)
 	pd.DataFrame(_log).to_csv(log_path)
 
-def put_into_database(df, 
-					  database_name = 'Sales' , 
-					  collection_name = 'Records'):
-	
-	myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-	mydb = myclient["mydb"]
-	mycol = mydb["customers"]
-	# # insert
-	# mydict = {
-	# 	"name" : "John",
-	# 	"address": "Highway 37"
-	# }
 
-	# x = mycol.insert_one(mydict)
+def save_segments_to_mongodb(segment_directory_path, 
+						    database_name , 
+						    collection_name,
+						    PORT = 27017 ):
+	'''
+		Input  
+			database_name: Database name 
+			collection_name : Collection name 
+			PORT : default is 27017 for MongoDB
+	'''
 	
-	mydb.drop_collection("customers")
-	print(mydb.list_collection_names())
+	# MongoDB	
+	myclient = pymongo.MongoClient("mongodb://localhost:%d/"%(PORT))
 
+	# Access Database
+	mydb = myclient[database_name]
+	# print(mydb.list_collection_names())
 
-	
+	# Reset collection whose name is "collection_name"
+	mydb.drop_collection(collection_name)
+
+	# Create new collection with the name "collection_name"
+	mycol = mydb[collection_name]
+
+	# Read data 
+	segment_paths = [ path for path in os.listdir(segment_directory_path) if "segment" in path and "paths" not in path]
+	segment_paths = list(sorted(segment_paths, key = lambda x: int(x.split(".")[0].split("_")[1])))
+	print(' [INFO] All segment paths', segment_paths)
+
+	# Insert data 
+	for segment_path in segment_paths:
+		print('\n\n [INFO] Reading csv file', PATH+segment_path)
+		df = pd.read_csv(PATH+segment_path)
+		
+		# [{'col1': 1.0, 'col2': 0.5}, {'col1': 2.0, 'col2': 0.75}]
+		print(' [INFO] Converting from DataFrame into List of directories... ')
+		df = df.to_dict('records')
+
+		print(' [INFO] Inserting into database ... ')
+		mycol.insert_many(df)
 
 
 
 
 if __name__ == '__main__':
 	
-	# uncomment this line to segment huge amount of data in 1 file into multiple files 
-	# segment_big_file(PATH_DATA_1)
+	## Uncomment this line to segment huge amount of data in 1 file into multiple files 
+	# path_data_1 = 'dataset/1500000_Sales_Records/' + '1500000_Sales_Records.csv'
+	# segment_big_file(path_data_1, NUM_BLOCKS = 50000)
 
-	put_into_database(0)
+	## Save to Mongodb
+	# segment_directory_path = 'dataset/1500000_Sales_Records/'
+	# save_segments_to_mongodb(segment_directory_path, 'Demo', 'Sales')
 
-
-
-
-# [{'col1': 1.0, 'col2': 0.5}, {'col1': 2.0, 'col2': 0.75}]
-# t_dict = t.to_dict('records')
-
-# 
-
-# # show all database 
-# print(myclient.list_database_names())
-
-# mydb = myclient["mydb"] # database 
-# mycol = mydb["customers"] # collection
-
-# print(mydb.list_collection_names())

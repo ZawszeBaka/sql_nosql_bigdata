@@ -43,6 +43,7 @@ mylist = [
 
 x = mycol.insert_many(mylist)
 
+print('____')
 print(x.inserted_ids)
 
 for x in mycol.find():
