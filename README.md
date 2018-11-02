@@ -24,16 +24,4 @@ SQL, NoSQL , Big Data
 
 
 
-[=] Process: 
-
-	MongoDB : 
-		Insert to database     	: DONE 
-		Check memory 			: DONE
-		Write Queries 			:  
-		Test speed 				: 
-
-	Mysql : 
-		Insert to database     	: DONE 
-		Check memory 			: DONE
-		Write Queries 			:  
-		Test speed 				: 
+			: 
